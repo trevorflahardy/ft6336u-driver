@@ -11,8 +11,16 @@
 //! - Gesture detection capabilities
 //! - Configurable power modes and scan rates
 //! - Comprehensive register access
+//! - Optional async support via the `async` feature flag
+//!
+//! ## Feature Flags
+//!
+//! - `async` - Enables async/await support using `embedded-hal-async` traits.
+//!   When this feature is enabled, all I2C operations become asynchronous.
 //!
 //! ## Quick Start
+//!
+//! ### Blocking API (default)
 //!
 //! ```rust,no_run
 //! # use embedded_hal::i2c::I2c;
@@ -42,6 +50,50 @@
 //! }
 //! ```
 //!
+//! ### Async API (with `async` feature)
+//!
+//! Add the feature to your `Cargo.toml`:
+//!
+//! ```toml
+//! [dependencies]
+//! ft6336u-driver = { version = "1.0", features = ["async"] }
+//! ```
+//!
+//! Then use the async API:
+//!
+//! ```rust,no_run
+//! # #[cfg(feature = "async")]
+//! # use embedded_hal_async::i2c::I2c;
+//! # use core::convert::Infallible;
+//! # struct MockI2c;
+//! # impl embedded_hal::i2c::ErrorType for MockI2c {
+//! #     type Error = Infallible;
+//! # }
+//! # #[cfg(feature = "async")]
+//! # impl I2c for MockI2c {
+//! #     async fn write(&mut self, _: u8, _: &[u8]) -> Result<(), Self::Error> { Ok(()) }
+//! #     async fn read(&mut self, _: u8, _: &mut [u8]) -> Result<(), Self::Error> { Ok(()) }
+//! #     async fn write_read(&mut self, _: u8, _: &[u8], _: &mut [u8]) -> Result<(), Self::Error> { Ok(()) }
+//! #     async fn transaction(&mut self, _: u8, _: &mut [embedded_hal_async::i2c::Operation<'_>]) -> Result<(), Self::Error> { Ok(()) }
+//! # }
+//! # #[cfg(feature = "async")]
+//! # async fn example() {
+//! # let i2c = MockI2c;
+//! use ft6336u_driver::FT6336U;
+//!
+//! // Create the driver with your async I2C peripheral
+//! let mut touch = FT6336U::new(i2c);
+//!
+//! // Scan for touch events asynchronously
+//! let touch_data = touch.scan().await.unwrap();
+//!
+//! if touch_data.touch_count > 0 {
+//!     let point = &touch_data.points[0];
+//!     println!("Touch at ({}, {})", point.x, point.y);
+//! }
+//! # }
+//! ```
+//!
 //! ## Hardware Integration
 //!
 //! The FT6336U communicates over I2C at address `0x38`. It requires:
@@ -53,6 +105,8 @@
 //!
 //! For optimal power efficiency, configure the touch controller's interrupt pin
 //! and use it to trigger touch scans only when needed:
+//!
+//! #### Blocking Example
 //!
 //! ```rust,no_run
 //! # use embedded_hal::i2c::I2c;
@@ -78,6 +132,38 @@
 //! // In your interrupt handler:
 //! // let data = touch.scan().unwrap();
 //! ```
+//!
+//! #### Async Example
+//!
+//! ```rust,no_run
+//! # #[cfg(feature = "async")]
+//! # use embedded_hal_async::i2c::I2c;
+//! # use core::convert::Infallible;
+//! # struct MockI2c;
+//! # impl embedded_hal::i2c::ErrorType for MockI2c {
+//! #     type Error = Infallible;
+//! # }
+//! # #[cfg(feature = "async")]
+//! # impl I2c for MockI2c {
+//! #     async fn write(&mut self, _: u8, _: &[u8]) -> Result<(), Self::Error> { Ok(()) }
+//! #     async fn read(&mut self, _: u8, _: &mut [u8]) -> Result<(), Self::Error> { Ok(()) }
+//! #     async fn write_read(&mut self, _: u8, _: &[u8], _: &mut [u8]) -> Result<(), Self::Error> { Ok(()) }
+//! #     async fn transaction(&mut self, _: u8, _: &mut [embedded_hal_async::i2c::Operation<'_>]) -> Result<(), Self::Error> { Ok(()) }
+//! # }
+//! # #[cfg(feature = "async")]
+//! # async fn example() {
+//! # let i2c = MockI2c;
+//! use ft6336u_driver::{FT6336U, GestureMode};
+//!
+//! let mut touch = FT6336U::new(i2c);
+//!
+//! // Enable interrupt mode
+//! touch.write_g_mode(GestureMode::Trigger).await.unwrap();
+//!
+//! // In your async interrupt handler:
+//! // let data = touch.scan().await.unwrap();
+//! # }
+//! ```
 
 #![no_std]
 #![deny(missing_docs)]
@@ -87,3 +173,4 @@ mod ft6336u;
 
 // Re-export the public API
 pub use ft6336u::*;
+

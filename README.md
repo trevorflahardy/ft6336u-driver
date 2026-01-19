@@ -15,6 +15,7 @@ A platform-agnostic Rust driver for the FT6336U capacitive touch controller, bui
 - **Power management** - Configurable active and monitor modes for power efficiency
 - **Interrupt-driven operation** - Support for both polling and interrupt modes
 - **Comprehensive API** - Full access to all device registers and configuration options
+- **Async support** - Optional async/await API using `embedded-hal-async` traits
 
 ## Hardware Support
 
@@ -31,13 +32,21 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-ft6336u-driver = "1.0"
+ft6336u-driver = "1.1.0"
 embedded-hal = "1.0"
+```
+
+### With Async Support
+
+```toml
+[dependencies]
+ft6336u-driver = { version = "1.1.0", features = ["async"] }
+embedded-hal-async = "1.0"
 ```
 
 ## Usage
 
-### Basic Example
+### Basic Example (Blocking)
 
 ```rust
 use ft6336u_driver::FT6336U;
@@ -54,7 +63,26 @@ if touch_data.touch_count > 0 {
 }
 ```
 
-### Polling Mode
+### Async Example
+
+When using the `async` feature, all methods become asynchronous:
+
+```rust
+use ft6336u_driver::FT6336U;
+
+// Create the driver with your async I2C peripheral
+let mut touch = FT6336U::new(i2c);
+
+// Scan for touch events asynchronously
+let touch_data = touch.scan().await.unwrap();
+
+if touch_data.touch_count > 0 {
+    let point = &touch_data.points[0];
+    println!("Touch at ({}, {})", point.x, point.y);
+}
+```
+
+### Polling Mode (Blocking)
 
 Continuously poll for touch events:
 
@@ -86,7 +114,38 @@ loop {
 }
 ```
 
-### Interrupt Mode
+### Polling Mode (Async)
+
+```rust
+use ft6336u_driver::{FT6336U, TouchStatus};
+
+let mut touch = FT6336U::new(i2c);
+
+loop {
+    let data = touch.scan().await.unwrap();
+
+    for i in 0..data.touch_count as usize {
+        let point = &data.points[i];
+
+        match point.status {
+            TouchStatus::Touch => {
+                println!("New touch at ({}, {})", point.x, point.y);
+            }
+            TouchStatus::Stream => {
+                println!("Touch moved to ({}, {})", point.x, point.y);
+            }
+            TouchStatus::Release => {
+                println!("Touch released");
+            }
+        }
+    }
+
+    // Use async delay
+    delay.delay_ms(10).await;
+}
+```
+
+### Interrupt Mode (Blocking)
 
 For better power efficiency, use interrupt-driven operation:
 
@@ -97,6 +156,26 @@ let mut touch = FT6336U::new(i2c);
 
 // Enable interrupt mode
 touch.write_g_mode(GestureMode::Trigger).unwrap();
+
+// In your interrupt handler:
+// let data = touch.scan().unwrap();
+// Process touch data...
+```
+
+### Interrupt Mode (Async)
+
+```rust
+use ft6336u_driver::{FT6336U, GestureMode};
+
+let mut touch = FT6336U::new(i2c);
+
+// Enable interrupt mode
+touch.write_g_mode(GestureMode::Trigger).await.unwrap();
+
+// In your async interrupt handler:
+// let data = touch.scan().await.unwrap();
+// Process touch data...
+```
 
 // In your interrupt handler:
 // let data = touch.scan().unwrap();

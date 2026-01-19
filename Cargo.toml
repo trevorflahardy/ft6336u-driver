@@ -1,6 +1,6 @@
 [package]
 name = "ft6336u-driver"
-version = "1.0.0"
+version = "1.1.0"
 edition = "2021"
 authors = ["Trevor Flahardy"]
 license = "MIT OR Apache-2.0"
@@ -10,7 +10,12 @@ keywords = ["embedded", "touchscreen", "ft6336u", "capacitive", "no-std"]
 categories = ["embedded", "hardware-support", "no-std"]
 readme = "README.md"
 
+[features]
+default = []
+async = ["embedded-hal-async"]
+
 [dependencies]
 embedded-hal = "1.0"
+embedded-hal-async = { version = "1.0", optional = true }
 
 [dev-dependencies]
