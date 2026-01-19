@@ -13,19 +13,9 @@
 //!
 //! This is a no_run example as it requires actual hardware.
 
-#![no_std]
-#![no_main]
-
-use embedded_hal::i2c::I2c;
-use ft6336u_driver::{DeviceMode, FT6336U};
-
-#[panic_handler]
-fn panic(_info: &core::panic::PanicInfo) -> ! {
-    loop {}
-}
-
-#[no_mangle]
-pub extern "C" fn main() -> ! {
+fn main() {
+    // This example demonstrates the structure for embedded use
+    // In a real embedded application, you would:
     // Initialize I2C peripheral
     // let i2c = ...; // Your I2C initialization here
     // let mut touch = FT6336U::new(i2c);
@@ -102,5 +92,5 @@ pub extern "C" fn main() -> ! {
     //     Err(e) => println!("Error reading state: {:?}", e),
     // }
 
-    loop {}
+    println!("This is a template for embedded use. See comments for implementation.");
 }
