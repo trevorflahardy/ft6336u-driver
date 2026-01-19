@@ -31,7 +31,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-ft6336u-driver = "0.1"
+ft6336u-driver = "1.0"
 embedded-hal = "1.0"
 ```
 
